@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "wildwest/api/proto/shootout;shootoutpb";
+
+import "google/protobuf/empty.proto";
+
+package shootoutpb;
+
+service ShootoutService {
+  rpc BeginShootout(BeginShootoutRequest) returns (google.protobuf.Empty);
+}
+
+message BeginShootoutRequest {
+  int64 timestamp = 1;
+}

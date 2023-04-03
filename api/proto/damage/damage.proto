@@ -1,0 +1,15 @@
+syntax = "proto3";
+option go_package = "wildwest/api/proto/damage;damagepb";
+
+import "google/protobuf/empty.proto";
+
+package damagepb;
+
+service DamageService {
+  rpc ApplyDamage(DamageRequest) returns (google.protobuf.Empty);
+}
+
+message DamageRequest {
+  int64 damage = 1;
+  int64 from = 2;
+}

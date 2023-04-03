@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}
+data:
+  cowboys: |
+    [
+      {
+        "name": "John",
+        "health": 33,
+        "damage": 1
+      },
+      {
+        "name": "Bill",
+        "health": 12,
+        "damage": 2
+      },
+      {
+        "name": "Sam",
+        "health": 23,
+        "damage": 1
+      },
+      {
+        "name": "Peter",
+        "health": 31,
+        "damage": 3
+      },
+      {
+        "name": "Philip",
+        "health": 16,
+        "damage": 2
+      },
+      {
+        "name": "Tom",
+        "health": 15,
+        "damage": 1
+      },
+      {
+        "name": "Jason",
+        "health": 1,
+        "damage": 15
+      },
+      {
+        "name": "Steve",
+        "health": 22,
+        "damage": 2
+      },
+      {
+        "name": "Frank",
+        "health": 23,
+        "damage": 1
+      },
+      {
+        "name": "Kyle",
+        "health": 25,
+        "damage": 3
+      },
+      {
+        "name": "Paul",
+        "health": 28,
+        "damage": 2
+      },
+      {
+        "name": "Rick",
+        "health": 11,
+        "damage": 1
+      },
+      {
+        "name": "Don",
+        "health": 1,
+        "damage": 3
+      },
+      {
+        "name": "Eric",
+        "health": 2,
+        "damage": 2
+      },
+      {
+        "name": "Mark",
+        "health": 9,
+        "damage": 1
+      },
+      {
+        "name": "Luke",
+        "health": 16,
+        "damage": 3
+      },
+      {
+        "name": "Adam",
+        "health": 26,
+        "damage": 2
+      },
+      {
+        "name": "Alan",
+        "health": 25,
+        "damage": 1
+      },
+      {
+        "name": "Dave",
+        "health": 28,
+        "damage": 3
+      },
+      {
+        "name": "Jim",
+        "health": 17,
+        "damage": 2
+      },
+      {
+        "name": "Tim",
+        "health": 15,
+        "damage": 1
+      },
+      {
+        "name": "George",
+        "health": 14,
+        "damage": 3
+      },
+      {
+        "name": "Jerry",
+        "health": 13,
+        "damage": 2
+      },
+      {
+        "name": "Max",
+        "health": 12,
+        "damage": 1
+      },
+      {
+        "name": "Joe",
+        "health": 1,
+        "damage": 8
+      },
+      {
+        "name": "Alex",
+        "health": 3,
+        "damage": 4
+      },
+      {
+        "name": "Jack",
+        "health": 1,
+        "damage": 1
+      },
+      {
+        "name": "Ken",
+        "health": 1,
+        "damage": 3
+      },
+      {
+        "name": "Chris",
+        "health": 10,
+        "damage": 2
+      },
+      {
+        "name": "Robert",
+        "health": 13,
+        "damage": 2
+      }
+    ]

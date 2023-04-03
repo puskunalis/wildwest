@@ -1,0 +1,9 @@
+cowboyImage: ghcr.io/puskunalis/cowboy:1.0.0
+cowboyControllerImage: ghcr.io/puskunalis/cowboy-controller:1.0.0
+replicas: 30
+cowboyAppName: cowboy
+cowboyControllerAppName: cowboy-controller
+etcdAppName: etcd
+grpcPort: 50051
+readinessPort: 8080
+etcdPort: 2379

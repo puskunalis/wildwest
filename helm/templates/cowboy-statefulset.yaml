@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.cowboyAppName }}
+  labels:
+    app: {{ .Values.cowboyAppName }}
+spec:
+  serviceName: {{ .Chart.Name }}
+  podManagementPolicy: Parallel
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.cowboyAppName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.cowboyAppName }}
+    spec:
+      containers:
+        - name: {{ .Values.cowboyAppName }}
+          image: {{ .Values.cowboyImage }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REPLICAS
+              value: "{{ .Values.replicas }}"
+          ports:
+            - containerPort: {{ .Values.grpcPort }}
+              name: grpc
+            - containerPort: {{ .Values.readinessPort }}
+              name: ready
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: ready
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: {{ .Chart.Name }}-volume
+              mountPath: /{{ .Chart.Name }}
+      volumes:
+        - name: {{ .Chart.Name }}-volume
+          configMap:
+            name: {{ .Chart.Name }}
