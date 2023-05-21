@@ -2,18 +2,20 @@ package datastore
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"time"
+	"wildwest/internal/utils"
 
 	etcdClient "go.etcd.io/etcd/client/v3"
 )
 
-var ErrKeyNotFound = errors.New("key not found")
+const ErrKeyNotFound = utils.ConstError("key not found")
 
 type Datastore interface {
 	Get(ctx context.Context, key string) (string, error)
 	GetPrefix(ctx context.Context, key string) (map[string]string, error)
 	Put(ctx context.Context, key string, val string) error
-	Transaction(ctx context.Context) *Txn
+	Transaction(ctx context.Context) Transaction
 	Close() error
 }
 
@@ -68,6 +70,10 @@ func (ecw *EtcdClientWrapper) GetPrefix(ctx context.Context, key string) (map[st
 		getPrefixResponse[string(kv.Key)] = string(kv.Value)
 	}
 
+	if len(getPrefixResponse) == 0 {
+		return nil, ErrKeyNotFound
+	}
+
 	return getPrefixResponse, nil
 }
 
@@ -79,7 +85,7 @@ func (ecw *EtcdClientWrapper) Put(ctx context.Context, key string, value string)
 }
 
 // Transaction creates a new transaction
-func (ecw *EtcdClientWrapper) Transaction(ctx context.Context) *Txn {
+func (ecw *EtcdClientWrapper) Transaction(ctx context.Context) Transaction {
 	return &Txn{
 		etcdTxn: ecw.client.Txn(ctx),
 	}
@@ -88,4 +94,19 @@ func (ecw *EtcdClientWrapper) Transaction(ctx context.Context) *Txn {
 // Close closes the connection to the datastore
 func (ecw *EtcdClientWrapper) Close() error {
 	return ecw.closeConnectionFunc()
+}
+
+func InitEtcdDatastore(etcdEndpoint string) (*EtcdClientWrapper, error) {
+	etcdEndpoints := []string{etcdEndpoint}
+	cfg := etcdClient.Config{
+		Endpoints:   etcdEndpoints,
+		DialTimeout: time.Minute,
+	}
+
+	etcdC, err := etcdClient.New(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("create etcd client: %w", err)
+	}
+
+	return New(etcdC), nil
 }

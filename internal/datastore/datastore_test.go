@@ -1,52 +1,122 @@
-package datastore
+package datastore_test
 
 import (
 	"context"
 	"testing"
+	"wildwest/internal/datastore"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMockClient(t *testing.T) {
-	fakeClient := newFakeClient()
-
+func TestGet(t *testing.T) {
 	tests := []struct {
-		name           string
-		key            string
-		value          string
-		getPrefix      string
-		getPrefixError error
-		getPrefixRes   map[string]string
+		name     string
+		key      string
+		value    string
+		expected string
+		err      error
 	}{
-		{"test key", "test123", "val", "key", ErrKeyNotFound, nil},
-		{"key 1", "key1", "value1", "key", nil, map[string]string{"key1": "value1"}},
-		{"key 2", "key2", "value2", "key", nil, map[string]string{"key1": "value1", "key2": "value2"}},
-		{"key 3", "key3", "value3", "key", nil, map[string]string{"key1": "value1", "key2": "value2", "key3": "value3"}},
-		{"foo key", "foo", "bar", "foo", nil, map[string]string{"foo": "bar"}},
+		{
+			name:     "Existing key",
+			key:      "key1",
+			value:    "value1",
+			expected: "value1",
+			err:      nil,
+		},
+		{
+			name:     "Non-existing key",
+			key:      "key2",
+			value:    "",
+			expected: "",
+			err:      datastore.ErrKeyNotFound,
+		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := fakeClient.Put(context.Background(), tc.key, tc.value)
-			assert.NoError(t, err)
+			client := datastore.NewFakeClient()
+			ctx := context.Background()
 
-			value, err := fakeClient.Get(context.Background(), tc.key)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.value, value)
-
-			prefixValues, err := fakeClient.GetPrefix(context.Background(), tc.getPrefix)
-			assert.Equal(t, tc.getPrefixError, err)
-
-			if diff := cmp.Diff(tc.getPrefixRes, prefixValues); diff != "" {
-				t.Errorf(diff)
+			if tc.value != "" {
+				err := client.Put(ctx, tc.key, tc.value)
+				assert.NoError(t, err)
 			}
+			value, err := client.Get(ctx, tc.key)
+			assert.Equal(t, tc.expected, value)
+			assert.ErrorIs(t, err, tc.err)
 		})
 	}
+}
 
-	t.Run("key not found", func(t *testing.T) {
-		value, err := fakeClient.Get(context.Background(), "nonexistent")
-		assert.Equal(t, ErrKeyNotFound, err)
-		assert.Empty(t, value)
-	})
+func TestGetPrefix(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		kvPairs  map[string]string
+		expected map[string]string
+		err      error
+	}{
+		{
+			name: "Multiple matching keys",
+			key:  "key",
+			kvPairs: map[string]string{
+				"key1":   "value1",
+				"key2":   "value2",
+				"random": "random",
+			},
+			expected: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			err: nil,
+		},
+		{
+			name:     "No matching keys",
+			key:      "key",
+			kvPairs:  map[string]string{"random": "random"},
+			expected: nil,
+			err:      datastore.ErrKeyNotFound,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client := datastore.NewFakeClient()
+			ctx := context.Background()
+
+			for key, value := range tc.kvPairs {
+				err := client.Put(ctx, key, value)
+				assert.NoError(t, err)
+			}
+			value, err := client.GetPrefix(ctx, tc.key)
+			assert.Equal(t, tc.expected, value)
+			assert.ErrorIs(t, err, tc.err)
+		})
+	}
+}
+
+func TestPut(t *testing.T) {
+	tests := []struct {
+		name  string
+		key   string
+		value string
+	}{
+		{
+			name:  "Put value",
+			key:   "key1",
+			value: "value1",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			client := datastore.NewFakeClient()
+			ctx := context.Background()
+
+			err := client.Put(ctx, tc.key, tc.value)
+			assert.NoError(t, err)
+			val, _ := client.Get(ctx, tc.key)
+			assert.Equal(t, tc.value, val)
+		})
+	}
 }

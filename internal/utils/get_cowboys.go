@@ -2,17 +2,17 @@ package utils
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 )
 
-var (
-	ErrCowboyListTooShort      = errors.New("cowboy list size is smaller than cowboy replica count")
-	ErrCowboyNamesNotUnique    = errors.New("cowboy names are not unique")
-	ErrCowboyHealthNotPositive = errors.New("cowboy health must be positive")
-	ErrCowboyDamageNotPositive = errors.New("cowboy damage must be positive")
+const (
+	ErrCowboyListInvalidJSONFormat = ConstError("cowboy list is not valid json")
+	ErrCowboyListTooShort          = ConstError("cowboy list size is smaller than cowboy replica count")
+	ErrCowboyNamesNotUnique        = ConstError("cowboy names are not unique")
+	ErrCowboyHealthNotPositive     = ConstError("cowboy health must be positive")
+	ErrCowboyDamageNotPositive     = ConstError("cowboy damage must be positive")
 )
 
 type cowboyListValidationFunc func([]Cowboy) error
@@ -21,7 +21,7 @@ type cowboyListValidationFunc func([]Cowboy) error
 func GetCowboys(filename string, replicas int) ([]Cowboy, error) {
 	cowboys, err := loadCowboys(filename)
 	if err != nil {
-		return nil, fmt.Errorf("get cowboys: %w", err)
+		return nil, ErrCowboyListInvalidJSONFormat
 	}
 
 	// validate the cowboy list
@@ -75,7 +75,7 @@ func validateCowboyList(cowboys []Cowboy, replicas int) error {
 
 	validationFuncs := []cowboyListValidationFunc{
 		compareCowboyListToReplicaCount,
-		areCowboyNamesUnique,
+		//areCowboyNamesUnique, // TODO uncomment
 		areCowboyHealthValuesPositive,
 		areCowboyDamageValuesPositive,
 	}

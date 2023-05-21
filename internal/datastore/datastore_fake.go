@@ -3,15 +3,25 @@ package datastore
 import (
 	"context"
 	"strings"
+	"sync"
 )
 
-type fakeClient struct {
+type FakeClient struct {
 	kvStorage map[string]string
+	mu        *sync.RWMutex
+	dbMu      *sync.Mutex
 }
 
-var _ Datastore = (*fakeClient)(nil)
+var _ Datastore = (*FakeClient)(nil)
 
-func (fc *fakeClient) Get(_ context.Context, key string) (string, error) {
+func (fc *FakeClient) Get(ctx context.Context, key string) (string, error) {
+	if ctx.Err() != nil {
+		return "", ctx.Err()
+	}
+
+	fc.mu.Lock()
+	defer fc.mu.Unlock()
+
 	value, ok := fc.kvStorage[key]
 	if !ok {
 		return "", ErrKeyNotFound
@@ -20,7 +30,14 @@ func (fc *fakeClient) Get(_ context.Context, key string) (string, error) {
 	return value, nil
 }
 
-func (fc *fakeClient) GetPrefix(_ context.Context, key string) (map[string]string, error) {
+func (fc *FakeClient) GetPrefix(ctx context.Context, key string) (map[string]string, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	fc.mu.Lock()
+	defer fc.mu.Unlock()
+
 	resp := make(map[string]string)
 
 	for k, v := range fc.kvStorage {
@@ -36,22 +53,38 @@ func (fc *fakeClient) GetPrefix(_ context.Context, key string) (map[string]strin
 	return resp, nil
 }
 
-func (fc *fakeClient) Put(_ context.Context, key string, value string) error {
+func (fc *FakeClient) Put(ctx context.Context, key string, value string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	fc.mu.Lock()
+	defer fc.mu.Unlock()
+
 	fc.kvStorage[key] = value
 
 	return nil
 }
 
-func (fc *fakeClient) Transaction(_ context.Context) *Txn {
-	return nil
-}
-
-func (fc *fakeClient) Close() error {
-	return nil
-}
-
-func newFakeClient() *fakeClient {
-	return &fakeClient{
-		kvStorage: make(map[string]string),
+func (fc *FakeClient) Transaction(ctx context.Context) Transaction {
+	return &TxnFake{
+		datastore: fc,
+		ctx:       ctx,
 	}
+}
+
+func (fc *FakeClient) Close() error {
+	return nil
+}
+
+func NewFakeClient() *FakeClient {
+	return &FakeClient{
+		kvStorage: make(map[string]string),
+		mu:        &sync.RWMutex{},
+		dbMu:      &sync.Mutex{},
+	}
+}
+
+func (fc *FakeClient) GetDBMu() *sync.Mutex {
+	return fc.dbMu
 }

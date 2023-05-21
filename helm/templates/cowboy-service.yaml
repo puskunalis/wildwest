@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ .Values.cowboyAppName }}
   labels:
     app: {{ .Values.cowboyAppName }}
 spec:
@@ -10,5 +10,5 @@ spec:
     app: {{ .Values.cowboyAppName }}
   ports:
     - protocol: TCP
-      port: 50051
+      port: {{ .Values.grpcPort }}
       targetPort: grpc

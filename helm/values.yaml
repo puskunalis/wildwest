@@ -1,8 +1,10 @@
-cowboyImage: ghcr.io/puskunalis/cowboy:1.0.0
-cowboyControllerImage: ghcr.io/puskunalis/cowboy-controller:1.0.0
-replicas: 30
+cowboyImage: ghcr.io/puskunalis/cowboy:2.0.0
+cowboyControllerImage: ghcr.io/puskunalis/cowboy-controller:2.0.0
+shotFrequencyMilliseconds: 1000
+replicas: 10
 cowboyAppName: cowboy
 cowboyControllerAppName: cowboy-controller
+cowboyListKey: cowboys
 etcdAppName: etcd
 grpcPort: 50051
 readinessPort: 8080

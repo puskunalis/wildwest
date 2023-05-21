@@ -4,6 +4,7 @@ package shootoutpb
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ShootoutServiceClient interface {
-	BeginShootout(ctx context.Context, in *BeginShootoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReceiveShootoutTime(ctx context.Context, in *ReceiveShootoutTimeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type shootoutServiceClient struct {
@@ -30,9 +31,9 @@ func NewShootoutServiceClient(cc grpc.ClientConnInterface) ShootoutServiceClient
 	return &shootoutServiceClient{cc}
 }
 
-func (c *shootoutServiceClient) BeginShootout(ctx context.Context, in *BeginShootoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *shootoutServiceClient) ReceiveShootoutTime(ctx context.Context, in *ReceiveShootoutTimeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/shootoutpb.ShootoutService/BeginShootout", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/shootoutpb.ShootoutService/ReceiveShootoutTime", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,7 @@ func (c *shootoutServiceClient) BeginShootout(ctx context.Context, in *BeginShoo
 // All implementations must embed UnimplementedShootoutServiceServer
 // for forward compatibility
 type ShootoutServiceServer interface {
-	BeginShootout(context.Context, *BeginShootoutRequest) (*emptypb.Empty, error)
+	ReceiveShootoutTime(context.Context, *ReceiveShootoutTimeRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedShootoutServiceServer()
 }
 
@@ -51,8 +52,8 @@ type ShootoutServiceServer interface {
 type UnimplementedShootoutServiceServer struct {
 }
 
-func (UnimplementedShootoutServiceServer) BeginShootout(context.Context, *BeginShootoutRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BeginShootout not implemented")
+func (UnimplementedShootoutServiceServer) ReceiveShootoutTime(context.Context, *ReceiveShootoutTimeRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReceiveShootoutTime not implemented")
 }
 func (UnimplementedShootoutServiceServer) mustEmbedUnimplementedShootoutServiceServer() {}
 
@@ -67,20 +68,20 @@ func RegisterShootoutServiceServer(s grpc.ServiceRegistrar, srv ShootoutServiceS
 	s.RegisterService(&ShootoutService_ServiceDesc, srv)
 }
 
-func _ShootoutService_BeginShootout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BeginShootoutRequest)
+func _ShootoutService_ReceiveShootoutTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReceiveShootoutTimeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ShootoutServiceServer).BeginShootout(ctx, in)
+		return srv.(ShootoutServiceServer).ReceiveShootoutTime(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/shootoutpb.ShootoutService/BeginShootout",
+		FullMethod: "/shootoutpb.ShootoutService/ReceiveShootoutTime",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ShootoutServiceServer).BeginShootout(ctx, req.(*BeginShootoutRequest))
+		return srv.(ShootoutServiceServer).ReceiveShootoutTime(ctx, req.(*ReceiveShootoutTimeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -93,8 +94,8 @@ var ShootoutService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ShootoutServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "BeginShootout",
-			Handler:    _ShootoutService_BeginShootout_Handler,
+			MethodName: "ReceiveShootoutTime",
+			Handler:    _ShootoutService_ReceiveShootoutTime_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

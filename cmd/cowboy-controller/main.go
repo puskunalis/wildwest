@@ -4,32 +4,30 @@ import (
 	"wildwest/internal/broadcastdispatcher"
 	"wildwest/internal/utils"
 
+	"github.com/caarlos0/env/v6"
+
 	"go.uber.org/zap"
 )
 
-const (
-	podName        = "cowboy"
-	serviceName    = "wildwest"
-	namespace      = "default"
-	replicasEnvKey = "REPLICAS"
-	grpcPort       = ":50051"
-	readinessPort  = ":8080"
-)
-
 func main() {
-	logger, syncLogger := utils.InitLogger()
-	defer syncLogger() //nolint:errcheck
+	logger := utils.InitLogger()
+	defer logger.Sync() //nolint:errcheck
 
-	// start readiness server
-	go utils.StartReadinessServer(logger, readinessPort)
-
-	// get replica count
-	replicas, err := utils.GetReplicas(replicasEnvKey)
+	// parse environment variables
+	var envConfig utils.Environment
+	err := env.Parse(&envConfig)
 	if err != nil {
-		logger.Fatal("get replicas", zap.Error(err))
+		logger.Fatal("parse environment", zap.Error(err))
 	}
 
-	broadcastdispatcher.BroadcastShootoutTime(logger, replicas, podName, serviceName, namespace, grpcPort)
+	// start readiness server
+	go utils.StartReadinessServer(logger, envConfig.ReadinessPort)
+
+	broadcastdispatcher.BroadcastShootoutTime(logger,
+		envConfig.Replicas,
+		envConfig.CowboyAppName,
+		envConfig.CowboyAppName,
+		envConfig.GRPCPort)
 
 	select {}
 }

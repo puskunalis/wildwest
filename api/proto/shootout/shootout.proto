@@ -6,9 +6,9 @@ import "google/protobuf/empty.proto";
 package shootoutpb;
 
 service ShootoutService {
-  rpc BeginShootout(BeginShootoutRequest) returns (google.protobuf.Empty);
+  rpc ReceiveShootoutTime(ReceiveShootoutTimeRequest) returns (google.protobuf.Empty);
 }
 
-message BeginShootoutRequest {
+message ReceiveShootoutTimeRequest {
   int64 timestamp = 1;
 }

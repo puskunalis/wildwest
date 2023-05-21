@@ -4,6 +4,7 @@ package damagepb
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DamageServiceClient interface {
-	ApplyDamage(ctx context.Context, in *DamageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ReceiveDamage(ctx context.Context, in *DamageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type damageServiceClient struct {
@@ -30,9 +31,9 @@ func NewDamageServiceClient(cc grpc.ClientConnInterface) DamageServiceClient {
 	return &damageServiceClient{cc}
 }
 
-func (c *damageServiceClient) ApplyDamage(ctx context.Context, in *DamageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *damageServiceClient) ReceiveDamage(ctx context.Context, in *DamageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/damagepb.DamageService/ApplyDamage", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/damagepb.DamageService/ReceiveDamage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +44,7 @@ func (c *damageServiceClient) ApplyDamage(ctx context.Context, in *DamageRequest
 // All implementations must embed UnimplementedDamageServiceServer
 // for forward compatibility
 type DamageServiceServer interface {
-	ApplyDamage(context.Context, *DamageRequest) (*emptypb.Empty, error)
+	ReceiveDamage(context.Context, *DamageRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedDamageServiceServer()
 }
 
@@ -51,8 +52,8 @@ type DamageServiceServer interface {
 type UnimplementedDamageServiceServer struct {
 }
 
-func (UnimplementedDamageServiceServer) ApplyDamage(context.Context, *DamageRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ApplyDamage not implemented")
+func (UnimplementedDamageServiceServer) ReceiveDamage(context.Context, *DamageRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReceiveDamage not implemented")
 }
 func (UnimplementedDamageServiceServer) mustEmbedUnimplementedDamageServiceServer() {}
 
@@ -67,20 +68,20 @@ func RegisterDamageServiceServer(s grpc.ServiceRegistrar, srv DamageServiceServe
 	s.RegisterService(&DamageService_ServiceDesc, srv)
 }
 
-func _DamageService_ApplyDamage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DamageService_ReceiveDamage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DamageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DamageServiceServer).ApplyDamage(ctx, in)
+		return srv.(DamageServiceServer).ReceiveDamage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/damagepb.DamageService/ApplyDamage",
+		FullMethod: "/damagepb.DamageService/ReceiveDamage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DamageServiceServer).ApplyDamage(ctx, req.(*DamageRequest))
+		return srv.(DamageServiceServer).ReceiveDamage(ctx, req.(*DamageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -93,8 +94,8 @@ var DamageService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*DamageServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ApplyDamage",
-			Handler:    _DamageService_ApplyDamage_Handler,
+			MethodName: "ReceiveDamage",
+			Handler:    _DamageService_ReceiveDamage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

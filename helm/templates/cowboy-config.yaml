@@ -3,7 +3,15 @@ kind: ConfigMap
 metadata:
   name: {{ .Chart.Name }}
 data:
-  cowboys: |
+  COWBOY_LIST_FILE_PATH: "/{{ .Chart.Name }}/{{ .Values.cowboyListKey }}"
+  SHOT_FREQ_MS: "{{ .Values.shotFrequencyMilliseconds }}"
+  REPLICAS: "{{ .Values.replicas }}"
+  COWBOY_APP_NAME: "{{ .Values.cowboyAppName }}"
+  ETCD_APP_NAME: "{{ .Values.etcdAppName }}"
+  GRPC_PORT: "{{ .Values.grpcPort }}"
+  READINESS_PORT: "{{ .Values.readinessPort }}"
+  ETCD_PORT: "{{ .Values.etcdPort }}"
+  {{ .Values.cowboyListKey }}: |
     [
       {
         "name": "John",

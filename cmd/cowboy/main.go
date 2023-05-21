@@ -2,41 +2,49 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
-	"strconv"
+	"os"
 	"time"
+	damagepb "wildwest/api/proto/damage"
+	shootoutpb "wildwest/api/proto/shootout"
+	"wildwest/internal/damageapplier"
+	"wildwest/internal/datastore"
+	"wildwest/internal/handlers/damagehandler"
+	"wildwest/internal/handlers/shootouthandler"
+	"wildwest/internal/shotqueue"
+	"wildwest/internal/targetprovider"
+
+	"github.com/caarlos0/env/v6"
 
 	"google.golang.org/grpc"
 
-	"wildwest/internal/damagehandler"
-	"wildwest/internal/shooterhandler"
-	"wildwest/internal/shootoutmanager"
+	"wildwest/internal/shootoutstarter"
 	"wildwest/internal/shotdispatcher"
+	"wildwest/internal/shotlooper"
 	"wildwest/internal/utils"
 
 	"go.uber.org/zap"
 )
 
-const (
-	podName            = "cowboy"
-	serviceName        = "wildwest"
-	namespace          = "default"
-	replicasEnvKey     = "REPLICAS"
-	etcdEndpoint       = "etcd.default.svc.cluster.local:2379"
-	cowboyListFilename = "/wildwest/cowboys"
-	grpcPort           = ":50051"
-	readinessPort      = ":8080"
-)
+// TODO graceful shutdown
 
 func main() {
-	logger, syncLogger := utils.InitLogger()
-	defer syncLogger() //nolint:errcheck
+	logger := utils.InitLogger()
+	defer logger.Sync() //nolint:errcheck
+
+	// parse environment variables
+	var envConfig utils.Environment
+	err := env.Parse(&envConfig)
+	if err != nil {
+		logger.Fatal("parse environment", zap.Error(err))
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// get our id
-	id, err := utils.GetID()
+	id, err := utils.GetID(os.Hostname)
 	if err != nil {
 		logger.Fatal("get id", zap.Error(err))
 	}
@@ -44,48 +52,45 @@ func main() {
 	// add id to logger fields
 	logger = logger.With(zap.Int("id", id))
 
-	// get replica count
-	replicas, err := utils.GetReplicas(replicasEnvKey)
-	if err != nil {
-		logger.Fatal("get replicas", zap.Error(err))
-	}
-
 	// get cowboys
-	cowboys, err := utils.GetCowboys(cowboyListFilename, replicas)
+	cowboys, err := utils.GetCowboys(envConfig.CowboyListFilePath, envConfig.Replicas)
 	if err != nil {
 		logger.Fatal("get cowboys", zap.Error(err))
 	}
 
 	// get our cowboy from cowboy list
-	cowboy := &cowboys[id]
+	cowboy := cowboys[id]
 
-	// add cowboy name to logger fields
+	// add name to logger fields
 	logger = logger.With(zap.String("name", cowboy.Name))
 
 	// init etcd
-	db, err := utils.InitDatastore(etcdEndpoint)
+	db, err := datastore.InitEtcdDatastore(fmt.Sprintf("%s:%d", envConfig.EtcdAppName, envConfig.EtcdPort))
 	if err != nil {
 		logger.Fatal("init datastore", zap.Error(err))
 	}
 	defer db.Close() //nolint:errcheck
 
 	// listen on grpc port
-	lis, err := net.Listen("tcp", grpcPort)
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", envConfig.GRPCPort))
 	if err != nil {
 		logger.Fatal("grpc server listen", zap.Error(err))
 	}
 
-	// define channel for receiving shootout start time
-	shootoutTime := make(chan time.Time)
+	// init damage applier
+	damageApplier := damageapplier.New(logger, id, db, cancel)
+
+	// init shootout manager
+	shootoutManager := shootoutstarter.New()
 
 	// init grpc servers
 	grpcServer := grpc.NewServer()
-	cowboyServer := damagehandler.New(logger, cowboy, cancel, db, id)
-	shootoutServer := shootoutmanager.New(shootoutTime)
 
-	// register grpc servers
-	cowboyServer.Register(grpcServer)
-	shootoutServer.Register(grpcServer)
+	damageHandler := damagehandler.NewGRPC(logger, damageApplier)
+	damagepb.RegisterDamageServiceServer(grpcServer, damageHandler)
+
+	shootoutHandler := shootouthandler.NewGRPC(shootoutManager)
+	shootoutpb.RegisterShootoutServiceServer(grpcServer, shootoutHandler)
 
 	// start grpc server
 	go func(grpcServer *grpc.Server) {
@@ -94,43 +99,21 @@ func main() {
 		}
 	}(grpcServer)
 
-	dbCtx, dbCtxCancel := context.WithTimeout(context.Background(), time.Minute)
-	defer dbCtxCancel()
+	shotQueue := shotqueue.New(time.Duration(envConfig.ShotFreqMs) * time.Millisecond)
+	shotDispatcher := shotdispatcher.NewGRPC(logger, envConfig.CowboyAppName, envConfig.CowboyAppName, envConfig.GRPCPort)
+	targetProvider := targetprovider.New(id, db)
 
-	health, err := db.Get(dbCtx, utils.CowboyKeyPrefix+strconv.Itoa(id))
-	// if we didn't find the health value already in the database
-	if err != nil {
-		logger.Debug("didn't find health already in the database")
+	shooterHandler := shotlooper.New(logger, id, cowboy, db, shotQueue, shotDispatcher, targetProvider)
 
-		// initialize health in etcd
-		err = db.Put(dbCtx, utils.CowboyKeyPrefix+strconv.Itoa(id), strconv.Itoa(int(cowboy.Health)))
-		if err != nil {
-			logger.Fatal("set initial health value", zap.Error(err))
-		}
+	isWinner := shootoutstarter.Start(ctx, logger, &shootoutstarter.Config{
+		ID:              id,
+		Cowboy:          cowboy,
+		DB:              db,
+		ShooterHandler:  shooterHandler,
+		ShootoutManager: shootoutManager,
+		Ready:           func() { utils.StartReadinessServer(logger, envConfig.ReadinessPort) },
+	})
 
-		// start readiness server
-		go utils.StartReadinessServer(logger, readinessPort)
-
-		logger.Info("waiting to begin shootout...")
-
-		// wait until shootout beginning
-		time.Sleep(time.Until(<-shootoutTime))
-		logger.Info("beginning shootout!")
-	} else {
-		// start readiness server
-		go utils.StartReadinessServer(logger, readinessPort)
-
-		if health <= "0" {
-			logger.Debug("found health already in the database, but we're already dead")
-			select {}
-		}
-	}
-
-	shotDispatcher := shotdispatcher.New(logger, podName, serviceName, namespace, grpcPort)
-
-	shooterHandler := shooterhandler.New(logger, id, cowboy, db, shotDispatcher)
-
-	isWinner := shooterHandler.StartShootingLoop(ctx)
 	if isWinner {
 		logger.Info("i am the winner!")
 	}

@@ -1,3 +1,6 @@
+# github.com/caarlos0/env/v6 v6.10.1
+## explicit; go 1.17
+github.com/caarlos0/env/v6
 # github.com/coreos/go-semver v0.3.1
 ## explicit; go 1.8
 github.com/coreos/go-semver/semver

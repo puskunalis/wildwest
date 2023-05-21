@@ -19,8 +19,15 @@ spec:
           command:
             - etcd
           args:
-            - --listen-client-urls=http://0.0.0.0:2379
-            - --advertise-client-urls=http://etcd:2379
+            - "--listen-client-urls=http://0.0.0.0:{{ .Values.etcdPort }}"
+            - "--advertise-client-urls=http://{{ .Values.etcdAppName }}:{{ .Values.etcdPort }}"
           ports:
             - containerPort: {{ .Values.etcdPort }}
               name: client
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

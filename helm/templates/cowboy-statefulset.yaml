@@ -5,7 +5,7 @@ metadata:
   labels:
     app: {{ .Values.cowboyAppName }}
 spec:
-  serviceName: {{ .Chart.Name }}
+  serviceName: {{ .Values.cowboyAppName }}
   podManagementPolicy: Parallel
   replicas: {{ .Values.replicas }}
   selector:
@@ -20,14 +20,21 @@ spec:
         - name: {{ .Values.cowboyAppName }}
           image: {{ .Values.cowboyImage }}
           imagePullPolicy: IfNotPresent
-          env:
-            - name: REPLICAS
-              value: "{{ .Values.replicas }}"
+          envFrom:
+            - configMapRef:
+                name: {{ .Chart.Name }}
           ports:
             - containerPort: {{ .Values.grpcPort }}
               name: grpc
             - containerPort: {{ .Values.readinessPort }}
               name: ready
+          resources:
+            requests:
+              cpu: 10m
+              memory: 8Mi
+            limits:
+              cpu: 20m
+              memory: 16Mi
           readinessProbe:
             httpGet:
               path: /ready
@@ -35,9 +42,9 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
           volumeMounts:
-            - name: {{ .Chart.Name }}-volume
+            - name: {{ .Chart.Name }}
               mountPath: /{{ .Chart.Name }}
       volumes:
-        - name: {{ .Chart.Name }}-volume
+        - name: {{ .Chart.Name }}
           configMap:
             name: {{ .Chart.Name }}

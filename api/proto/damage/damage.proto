@@ -6,10 +6,10 @@ import "google/protobuf/empty.proto";
 package damagepb;
 
 service DamageService {
-  rpc ApplyDamage(DamageRequest) returns (google.protobuf.Empty);
+  rpc ReceiveDamage(DamageRequest) returns (google.protobuf.Empty);
 }
 
 message DamageRequest {
-  int64 damage = 1;
-  int64 from = 2;
+  int64 from = 1;
+  int64 damage = 2;
 }

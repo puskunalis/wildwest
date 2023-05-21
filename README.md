@@ -13,24 +13,31 @@ If you'd like to build the container image yourself:
 
 ### Install Helm chart
 ```
-helm install wildwest helm/
+make helm-install
 ```
+
+Kind cluster will be automatically created if it doesn't exist.
 
 ### Check whether all pods are ready
 ```
-kubectl get po --watch
+kubectl get po -n wildwest --watch
 ```
 
 Once the shootout is over, the pods will remain running.
 
 ### Check logs
 ```
-kubectl logs --tail=-1 -l 'app in (cowboy, cowboy-controller)' --all-containers --ignore-errors | grep -v "DEBUG" | sort | less
+make logs
 ```
 
 ### Uninstall Helm chart
 ```
-helm uninstall wildwest
+make helm-uninstall
+```
+
+### Delete kind cluster
+```
+make kind-down
 ```
 
 ## Things learned

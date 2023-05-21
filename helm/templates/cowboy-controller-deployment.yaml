@@ -18,12 +18,19 @@ spec:
         - name: {{ .Values.cowboyControllerAppName }}
           image: {{ .Values.cowboyControllerImage }}
           imagePullPolicy: IfNotPresent
-          env:
-            - name: REPLICAS
-              value: "{{ .Values.replicas }}"
+          envFrom:
+            - configMapRef:
+                name: {{ .Chart.Name }}
           ports:
             - containerPort: {{ .Values.readinessPort }}
               name: ready
+          resources:
+            requests:
+              cpu: 10m
+              memory: 8Mi
+            limits:
+              cpu: 20m
+              memory: 16Mi
           readinessProbe:
             httpGet:
               path: /ready

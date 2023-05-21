@@ -1,14 +1,15 @@
 package datastore
 
 import (
-	"errors"
+	"wildwest/internal/utils"
 
 	etcdClient "go.etcd.io/etcd/client/v3"
 )
 
-const OpTypePut = "put"
-
-var ErrTransactionUnsuccessful = errors.New("transaction unsuccessful")
+const (
+	OpTypePut                  = "put"
+	ErrTransactionUnsuccessful = utils.ConstError("transaction unsuccessful")
+)
 
 // Cmp represents a comparison in a transaction
 type Cmp struct {
@@ -25,8 +26,8 @@ type Op struct {
 }
 
 type Transaction interface {
-	If(...Cmp) *Txn
-	Then(Op) *Txn
+	If(...Cmp) Transaction
+	Then(Op) Transaction
 	Commit() error
 }
 
@@ -55,7 +56,7 @@ func OpPut(key string, value string) Op {
 }
 
 // If adds comparisons to the transaction and returns the updated transaction
-func (t *Txn) If(cmps ...Cmp) *Txn {
+func (t *Txn) If(cmps ...Cmp) Transaction {
 	etcdCmps := make([]etcdClient.Cmp, 0, len(cmps))
 	for _, cmp := range cmps {
 		etcdCmps = append(etcdCmps, etcdClient.Compare(etcdClient.Value(cmp.key), cmp.operator, cmp.value))
@@ -67,7 +68,7 @@ func (t *Txn) If(cmps ...Cmp) *Txn {
 }
 
 // Then adds an operation to the transaction and returns the updated transaction
-func (t *Txn) Then(op Op) *Txn {
+func (t *Txn) Then(op Op) Transaction {
 	if op.opType == OpTypePut {
 		t.etcdTxn = t.etcdTxn.Then(etcdClient.OpPut(op.key, op.value))
 	}
